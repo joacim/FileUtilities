@@ -1,4 +1,4 @@
-package org.homelinux.net.code.fileutilities;
+package org.homelinux.net.code.multiutils;
 
 import org.junit.Assert;
 import org.junit.Test;
