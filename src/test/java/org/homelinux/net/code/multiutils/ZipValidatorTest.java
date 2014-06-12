@@ -25,4 +25,10 @@ public class ZipValidatorTest {
         Path file = Paths.get(getClass().getResource("/broken.zip").getFile());
         Assert.assertFalse(ZipValidator.isValidZip(file));
     }
+
+    @Test
+    public void brokenInsideZipFileShouldBeInValidZip() throws Exception {
+        Path file = Paths.get(getClass().getResource("/brokenInside.zip").getFile());
+        Assert.assertFalse(ZipValidator.isValidZip(file));
+    }
 }

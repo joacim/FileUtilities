@@ -1,8 +1,11 @@
 package org.homelinux.net.code.multiutils;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Enumeration;
+import java.util.zip.CRC32;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 
@@ -36,6 +39,72 @@ public class ZipValidator {
     }
 
     static boolean isValidZip(final Path file) {
+        return isValidZipWithValidEntries(file);
+    }
+
+    static boolean isValidZipWithValidEntries(final Path file) {
+        ZipFile zipArchive = null;
+        try {
+            zipArchive = new ZipFile(file.toFile());
+            Enumeration entries = zipArchive.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry zipEntry = (ZipEntry) entries.nextElement();
+                InputStream is = zipArchive.getInputStream(zipEntry);
+                if (zipEntry == null) {
+                    return false;
+                }
+                if (!validCrc(zipEntry, is)) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        } finally {
+            try {
+                if (zipArchive != null) {
+                    zipArchive.close();
+                    zipArchive = null;
+                }
+            } catch (IOException e) {
+            }
+        }
+    }
+
+    private static boolean validCrc(ZipEntry zipEntry, InputStream zipContent) throws IOException {
+        long correctCrc = zipEntry.getCrc();
+        long currentCrc = calcCheckSum(zipContent);
+        if (currentCrc == correctCrc) {
+            return true;
+        }
+        return false;
+    }
+
+    static boolean isValidZipWithValidFirstEntry(final Path file) {
+        ZipFile zipfile = null;
+        try {
+            // Simple zip check, taste the first zip entry
+            zipfile = new ZipFile(file.toFile());
+            Enumeration entries = zipfile.entries();
+            ZipEntry zip = (ZipEntry) entries.nextElement();
+            if (zip != null) {
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            return false;
+        } finally {
+            try {
+                if (zipfile != null) {
+                    zipfile.close();
+                    zipfile = null;
+                }
+            } catch (IOException e) {
+            }
+        }
+    }
+
+    static boolean isValidZipContainer(final Path file) {
         ZipFile zipfile = null;
         try {
             // Simple zip check
@@ -52,5 +121,17 @@ public class ZipValidator {
             } catch (IOException e) {
             }
         }
+    }
+
+    static long calcCheckSum(final InputStream is) throws IOException {
+        BufferedInputStream bis = new BufferedInputStream(is);
+        int byteCount = 0;
+        CRC32 checksum = new CRC32();
+        byte[] buffer = new byte[1024];
+        while ((byteCount = bis.read(buffer)) != -1) {
+            checksum.update(buffer, 0, byteCount);
+        }
+        bis.close();
+        return checksum.getValue();
     }
 }
