@@ -49,11 +49,11 @@ public class ZipValidator {
             Enumeration entries = zipArchive.entries();
             while (entries.hasMoreElements()) {
                 ZipEntry zipEntry = (ZipEntry) entries.nextElement();
-                InputStream is = zipArchive.getInputStream(zipEntry);
                 if (zipEntry == null) {
                     return false;
                 }
-                if (!validCrc(zipEntry, is)) {
+                InputStream zipEntryContent = zipArchive.getInputStream(zipEntry);
+                if (!validCrc(zipEntry, zipEntryContent)) {
                     return false;
                 }
             }
@@ -64,9 +64,9 @@ public class ZipValidator {
             try {
                 if (zipArchive != null) {
                     zipArchive.close();
-                    zipArchive = null;
                 }
             } catch (IOException e) {
+                System.err.println(e);
             }
         }
     }
@@ -74,10 +74,7 @@ public class ZipValidator {
     private static boolean validCrc(ZipEntry zipEntry, InputStream zipContent) throws IOException {
         long correctCrc = zipEntry.getCrc();
         long currentCrc = calcCheckSum(zipContent);
-        if (currentCrc == correctCrc) {
-            return true;
-        }
-        return false;
+        return currentCrc == correctCrc;
     }
 
     static boolean isValidZipWithValidFirstEntry(final Path file) {
@@ -87,19 +84,16 @@ public class ZipValidator {
             zipfile = new ZipFile(file.toFile());
             Enumeration entries = zipfile.entries();
             ZipEntry zip = (ZipEntry) entries.nextElement();
-            if (zip != null) {
-                return true;
-            }
-            return false;
+            return zip != null;
         } catch (Exception e) {
             return false;
         } finally {
             try {
                 if (zipfile != null) {
                     zipfile.close();
-                    zipfile = null;
                 }
             } catch (IOException e) {
+                System.err.println(e);
             }
         }
     }
@@ -116,16 +110,16 @@ public class ZipValidator {
             try {
                 if (zipfile != null) {
                     zipfile.close();
-                    zipfile = null;
                 }
             } catch (IOException e) {
+                System.err.println(e);
             }
         }
     }
 
     static long calcCheckSum(final InputStream is) throws IOException {
         BufferedInputStream bis = new BufferedInputStream(is);
-        int byteCount = 0;
+        int byteCount;
         CRC32 checksum = new CRC32();
         byte[] buffer = new byte[1024];
         while ((byteCount = bis.read(buffer)) != -1) {
