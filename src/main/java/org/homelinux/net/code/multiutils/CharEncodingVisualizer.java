@@ -8,7 +8,7 @@ import java.awt.*;
 import java.io.UnsupportedEncodingException;
 
 public class CharEncodingVisualizer implements DocumentListener {
-    
+
     private JTextField inputField;
     private final JLabel inputLabel = new JLabel("UTF-16 chars");
     private JTextField utf8HexField;
